@@ -517,6 +517,3 @@ else #if only playing with one deck
   end
 end
 
-
-
-
