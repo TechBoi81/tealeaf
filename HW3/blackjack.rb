@@ -161,33 +161,49 @@ module Blackjack
 
 end
 
-puts "\e[H\e[2J"
-p "How many players for this game?"
-player_count = gets.chomp
-player_count  = player_count.to_i
+
+player_count = deck_count= 0
 puts "\e[H\e[2J"
 
+while player_count == 0
+  p "How many players for this game?"
+  player_count = gets.chomp
+  player_count  = player_count.to_i
 
-p "How many decks for this game? It's recommended to use at least 2 decks"
-deck_count = gets.chomp
-deck_count = deck_count.to_i
-puts "\e[H\e[2J"
-p "Initializing game with 1 deck.  The dealer's hand will be hidden" if deck_count == 1
+  p "Please enter a valid number of players" if player_count == 0
+end
 
-game = Blackjack::Game.new(player_count, deck_count) 
 
+  puts "\e[H\e[2J"
+while deck_count == 0 
+  p "How many decks for this game? It's recommended to use at least 2 decks"
+  deck_count = gets.chomp
+  deck_count = deck_count.to_i
+  p "Please enter a valid number of decks to be played with" if deck_count == 0
+
+  p "Initializing game with 1 deck.  All hands will be hidden throughout the game." if deck_count == 1
+end
+
+  game = Blackjack::Game.new(player_count, deck_count) 
+puts "\e[H\e[2J" if deck_count > 1
 if player_count > 1
-  player_names = []
   for i in 0...player_count
-    p "What is player #{i+1}'s name?"
-    name = gets.chomp
-    player_names[i] = name
-    game.table.players[i].name = name
-    puts "\e[H\e[2J"
+    if i == 0 
+      p "You are in 1st position.  What is your name?"
+      name = gets.chomp
+      game.table.players[i].name = name
+      puts "\e[H\e[2J"
+    else #getting name for all other positions.
+      p "What is player #{i+1}'s name?"
+      name = gets.chomp
+      game.table.players[i].name = name
+      puts "\e[H\e[2J"
+    end
   end
 else
   p "What is your name?"
   name = gets.chomp
+  game.table.players[0].name = name
 end
 
 game.deal
@@ -204,6 +220,7 @@ if deck_count > 1
     p "#{game.table.players[x].name} shows a #{card1} and a #{card2}."
     x += 1
   end
+  p "Dealer shows #{game.table.dealer.hand.cards[1].keys[0]}."
 
   #getting initial hand totals here.
   for position in 0...player_count
@@ -212,10 +229,16 @@ if deck_count > 1
     player_total_h = player_total_lh.values[1]
     if player_total_l  < player_total_h
       player_total = player_total_h
-      p "BLACKJACK!!  Congrats! Please wait unti the other positions finish their turns." if player_total == 21
+      if player_total == 21 && position == 0
+        p "BLACKJACK!! Please wait until the other positions have finished."
+        game.table.players[0].hand.total = player_total
+      end
     else
       player_total = player_total_l
-      p "BLACKJACK!!  Congrats! Please wait unti the other positions finish their turns." if player_total == 21
+      if player_total == 21 && position == 0
+        p "BLACKJACK!! Please wait until the other positions have finished."
+        game.table.players[0].hand.total = player_total
+      end
     end
 
     if position == 0 #Human player options after deal
@@ -270,20 +293,18 @@ if deck_count > 1
           hit_count += 1
         end
         if player_total < 21
+          game.table.players[position].hand.total = player_total
           print "#{game.table.players[position].name} chooses to stay with:"
             for counter in 0...hit_count+2
               print " #{game.table.players[position].hand.cards[counter].keys[0]}"
             end
             print "\n"
-        #elsif player_total > 21
-         # p "Player busted!"
         end
       elsif player_total < 21 && player_total >= 17
         p "#{game.table.players[position].name}'s turn.  They chose to stay with #{card1} & #{card2}."
         game.table.players[position].hand.total = player_total
       end
     end
-    #p "#{game.table.players[i].name}'s total is #{player_total}"
   end
   d_total_lh = game.table.dealer.hand.evaluate
   d_total_l = d_total_lh.values[0]
@@ -294,9 +315,10 @@ if deck_count > 1
     dealer_total = d_total_l
   end
 
-  p "Dealer shows #{dealer.cards[1].keys[0]}."
+  p "Dealer shows #{dealer.cards[0].keys[0]}, & #{dealer.cards[1].keys[0]}."
   if dealer_total == 21
     p "Dealer has Blackjack!"
+    game.table.dealer.hand.total = dealer_total
   else
     #Dealer hits until value shown is above 17, then shows last card to get final total.
     x = 2
@@ -318,19 +340,19 @@ if deck_count > 1
   if game.table.dealer.hand.total == nil #if the dealer has busted
     p "The dealer busted!"
     #if the human wins
-    p "YOU WIN! Winner, Winner chicken dinner!" if game.table.players[0].hand.total != nil 
-    for position in 1...player_count
+    p "YOU WIN! Winner, Winner chicken dinner!" if game.table.players[0].hand.total
+    for loop_var1 in 1...player_count
       #if the computer player has not busted
-      p "#{game.table.players[position].name} also wins!" if game.table.players[position].hand.total != nil 
+      p "#{game.table.players[loop_var1].name} wins!" if game.table.players[loop_var1].hand.total  
     end
 
   else
     #p "The dealer's total is #{dealer_total}"
     #human player
-    if game.table.players[0].hand.total != nil && game.table.players[0].hand.total > dealer_total
+    if game.table.players[0].hand.total && game.table.players[0].hand.total > dealer_total
       p "Your total is #{game.table.players[0].hand.total}. The dealer has #{dealer_total}. You win! WOOT!"
-    elsif game.table.players[0].hand.total != nil && game.table.players[0].hand.total == dealer_total
-      p "#{player_name}'s total is #{total}.  The dealer has #{dealer_total}.  You push."
+    elsif game.table.players[0].hand.total && game.table.players[0].hand.total == dealer_total
+      p "#{game.table.players[0].name}'s total is #{game.table.players[0].hand.total}.  The dealer has #{dealer_total}.  You push."
     elsif game.table.players[0].hand.total == nil 
       p "You busted! The dealer takes all your money."
     else #Dealer's total is greater than human player's total.
@@ -341,62 +363,156 @@ if deck_count > 1
       player_name = game.table.players[positions].name
       total = game.table.players[positions].hand.total
       #if the computerp player(s) haven't busted
-      if total != nil && total > dealer_total
+      if total && total > dealer_total
         p "#{player_name}'s total is #{total}.  The dealer has #{dealer_total}. #{player_name} wins!"
-      elsif total != nil && total < dealer_total
+      elsif total && total < dealer_total
         p "#{player_name}'s total is #{total}.  The dealer has #{dealer_total}. The dealer wins."
-      #else #total == nil
-       # p "#{player_name} has busted!.  The dealer wins!"
       end
     end
   end
 
-
-
-
 else #if only playing with one deck
-  p "All hands are hidden in a one-deck game."
 
-  for i in 0...player_count
-    player_total_lh = game.table.players[i].hand.evaluate
+  #getting initial hand totals here.
+  for position in 0...player_count
+    player_total_lh = game.table.players[position].hand.evaluate
     player_total_l = player_total_lh.values[0]
     player_total_h = player_total_lh.values[1]
     if player_total_l  < player_total_h
       player_total = player_total_h
+      if player_total == 21 && position == 0
+        p "BLACKJACK!! Please wait until the other positions have finished."
+        game.table.players[0].hand.total = player_total
+      end
     else
       player_total = player_total_l
+      if player_total == 21 && position == 0
+        p "BLACKJACK!! Please wait until the other positions have finished."
+        game.table.players[0].hand.total = player_total
+      end
     end
-    p "Player #{i} total is #{player_total}"
-  end
 
-  d_card1 = dealer.cards[0].values[0]
-  d_card2 = dealer.cards[1].values[0]
+    if position == 0 #Human player options after deal
+      y = 2
+      while player_total < 21
+        p "Your total is #{player_total}.  Would you like to hit or stay?  Enter '1' for hit or '2' for stay"
+        choice = gets.chomp
+        choice = choice.to_i
+        puts "\e[H\e[2J"
+
+        if choice == 1
+          p "You chose to hit."
+          game.hit(game.table.players[0])
+          p "Your new card is #{game.table.players[0].hand.cards[y].keys[0]}"
+          player_total += game.table.players[0].hand.cards[y].values[0]
+          p "Your new total is #{player_total}"
+          y += 1
+
+          if player_total > 21
+            p "You busted! Womp womp!"
+            game.table.players[0].hand.total = nil
+          elsif player_total == 21
+            p "BLACKJACK!!"
+            game.table.players[0].hand.total = player_total
+          end
+
+        elsif choice == 2
+          p "You chose to stay.  Your total is #{player_total}"
+          game.table.players[0].hand.total = player_total
+          break
+        else #if choice is anything other than 1 or 2.
+          p "Please enter a valid choice."
+        end
+      end
+
+    else #For all the other players.  Their logic is the same as the dealer's: hit until 17, then stay.
+      iter = 2
+      hit_count = 0
+      if player_total < 17
+        while player_total < 17
+          p "#{game.table.players[position].name} chooses to hit."
+          game.hit(game.table.players[position])
+          player_total += game.table.players[position].hand.cards[iter].values[0]
+
+          if player_total > 21
+            game.table.players[position].hand.total = nil
+          end
+          iter += 1
+          hit_count += 1
+        end
+        if player_total < 21
+          game.table.players[position].hand.total = player_total
+          p "#{game.table.players[position].name} chooses to stay."
+            for counter in 0...hit_count+2
+            end
+        end
+      elsif player_total < 21 && player_total >= 17
+        p "#{game.table.players[position].name}'s turn.  They chose to stay."
+        game.table.players[position].hand.total = player_total
+      end
+    end
+  end
   d_total_lh = game.table.dealer.hand.evaluate
   d_total_l = d_total_lh.values[0]
   d_total_h = d_total_lh.values[1]
   if d_total_l < d_total_h
-    d_total = d_total_h
+    dealer_total = d_total_h
   else
-    d_total = d_total_l
+    dealer_total = d_total_l
   end
-  #p "Dealer total #{d_total}."
-  if d_total == 21
-    p "Dealer has Blackjack!"
+
+  if dealer_total == 21
+    game.table.dealer.hand.total = dealer_total
   else
-    #Iterate through the players, figure out their totals, and see if they want to hit or stay" Dealer hits/stays last.
     #Dealer hits until value shown is above 17, then shows last card to get final total.
-    until d_total > 17 
-      p "Dealer hits."
+    x = 2
+    while dealer_total < 17
+      p "Dealer's turn.  She chooses to hit."
       game.hit(game.table.dealer)
-      p "Dealer's new card is hidden"
-      d_total += dealer.cards[2].values[0]
-      #p "Dealer's new card value is : #{dealer.cards[2].values[0]}"
-      #p "Dealer's new total = #{d_total}"
+      dealer_total += dealer.cards[x].values[0]
+      x += 1
     end
-    if d_total > 21
-      p "Dealer busts"
+    if dealer_total > 21
+      game.table.dealer.hand.total = nil
     else
       p "Dealer stays"
+      game.table.dealer.hand.total = dealer_total
+    end
+  end
+
+  if game.table.dealer.hand.total == nil #if the dealer has busted
+    p "The dealer busted!"
+    #if the human wins
+    p "YOU WIN! Winner, Winner chicken dinner!" if game.table.players[0].hand.total
+    for loop_var1 in 1...player_count
+      #if the computer player has not busted
+      p "#{game.table.players[loop_var1].name} wins!" if game.table.players[loop_var1].hand.total  
+    end
+
+  else #The dealer did not bust.
+    p "The dealer's total is #{dealer_total}"
+    #human player
+    if game.table.players[0].hand.total && game.table.players[0].hand.total > dealer_total
+      p "Your total is #{game.table.players[0].hand.total}. The dealer has #{dealer_total}. You win! WOOT!"
+    elsif game.table.players[0].hand.total && game.table.players[0].hand.total == dealer_total
+      p "#{game.table.players[0].name}'s total is #{game.table.players[0].hand.total}.  The dealer has #{dealer_total}.  You push."
+    elsif game.table.players[0].hand.total == nil 
+      p "You busted! The dealer takes all your money."
+    else #Dealer's total is greater than human player's total.
+      p "Your total is #{game.table.players[0].hand.total}. The dealer has #{dealer_total}. You loose.  Womp womp!"
+    end
+
+    for positions in 1...player_count
+      player_name = game.table.players[positions].name
+      total = game.table.players[positions].hand.total
+      #if the computerp player(s) haven't busted
+      if total && total > dealer_total
+        p "#{player_name}'s total is #{total}.  The dealer has #{dealer_total}. #{player_name} wins!"
+      elsif total && total < dealer_total
+        p "#{player_name}'s total is #{total}.  The dealer has #{dealer_total}. The dealer wins."
+      else #The computer players have busted
+        p "#{player_name} has busted!.  The dealer wins!"
+      end
     end
   end
 end
