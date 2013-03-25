@@ -1,0 +1,57 @@
+<h1>Let's Play Blackjack!</h1>
+
+Welcome <%= session[:player_name] %>!
+<br />
+<br />
+<% if @game_over %>
+<p>
+	<strong>Play Again?</strong>
+	<a href= "/game" class="btn btn-primary">Yes</a>
+	<a href="/game_over" class="btn btn-danger">No</a>
+</p>
+<% end %>
+
+<div class="well well-small">
+<h4>Dealer's Hand:</h4>
+<% session[:dealer_hand].each_with_index do |card, i| %>
+	<% if session[:turn] == "player" && i == 0 %>
+		<img src="/images/cards/cover.jpg">
+	<% else %>
+		<%= card_img(card) %>
+	<% end %>
+<% end %>
+
+  <% if @dealer_hit_btn %>
+  <h5> The dealer is showing <%= calc_total(session[:dealer_hand]) %>.</h5>
+  <p>
+  	<form action='/game/dealer/hit' method='post'>
+  		<input type="submit" class="btn btn-primary" value="Show dealer's next card" />
+  	</form>
+  </p>
+  <% end %>
+</div>
+
+<div class="well well-small">
+<h4>Player's Hand:</h4>
+<% session[:player_hand].each do |card| %>
+<%= card_img(card) %>
+  <% end %>
+</div>
+
+<p>
+
+<h5><%= session[:player_name] %> shows <%= calc_total(session[:player_hand]) %>.</h5>  
+
+<% if @show_buttons %>
+	Hit or Stay? That is the question...
+	<!-------------Hit Button------------>
+	<form id="hit_btn" action="/game/player/hit" method='post' >
+		<input type="submit" class="btn btn-primary" value="Hit"/>
+	</form>
+
+	<!-------------Stay Button------------>
+	<form id="stay_btn" action="/game/player/stay" method='post' >
+		<input type="submit" class="btn btn-success" value="Stay" />
+	</form>
+<% end %>
+</p>

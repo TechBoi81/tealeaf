@@ -1,0 +1,16 @@
+form#hit_btn {
+	float: left;
+	margin-right: 5px;
+}
+
+form#stay_btn {
+	float: left;
+}
+
+form#restart_btn {
+	float: right;
+	margin-right: 5px;
+}
+img.card_img {
+	margin: 0px 10px 10px 0px;
+}
