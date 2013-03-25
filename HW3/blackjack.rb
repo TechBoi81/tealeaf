@@ -1,4 +1,5 @@
 require 'pp'
+require 'sinatra'
 require_relative 'bj'
 
 def clear_screen
